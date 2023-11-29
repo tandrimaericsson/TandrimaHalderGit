@@ -105,8 +105,9 @@ Feature: test the GreenKart application
     When Click on cart to open
     Then Assert Number of items added in cart preview
     And Total cart price in cart preview for each product
-    And Number of quantity for each product
-  @test
+    And Assert Number of quantity for each product
+
+
   Scenario: Verify the ability to delete item from cart
     When Enter quantity for the following products
       | product     | quantity |
@@ -124,9 +125,56 @@ Feature: test the GreenKart application
     Then Assert removed products are not available in cart
     When Click on cart to close
     Then Assert Number of items present in cart
-  #Scenario: Verify the ability to increase quantity after adding item to cart
-  #Scenario: Verify the ability to add item in big quantity
-  #Scenario: Verify the ability to checkout
+
+
+  Scenario: Verify the ability to increase quantity after adding item to cart
+    When Enter quantity for the following products
+      | product     | quantity |
+      | Beetroot    | 10       |
+      | Walnuts     | 5        |
+      | Nuts        | 4        |
+      | Water Melon | 2        |
+    And Click on Add To Cart button for the products
+    Then Assert Number of items added in cart
+    When Click on cart to open
+    Then Assert Number of items added in cart preview
+    When Click on cart to close
+    And Enter quantity for the following products
+      | product     | quantity |
+      | Nuts        | 10       |
+      | Water Melon | 10       |
+    And Click on Add To Cart button for the products with increased quantity
+    When Click on cart to open
+    Then Assert Number of quantity for each product
+
+
+  Scenario: Verify the ability to add item in big quantity
+    Given Base url is "https://rahulshettyacademy.com"
+    When Execute "/seleniumPractise/data/products.json" resource with "get" method
+    When Enter quantity for the following products
+      | product | quantity    |
+      | Walnuts | 11234567890 |
+    And Click on Add To Cart button for the products
+    Then Assert Number of items added in cart
+    When Click on cart to open
+    Then Assert Number of items added in cart preview
+    And Total cart price from json response
+
+  @test
+  Scenario: Verify the ability to checkout
+    When Enter quantity for the following products
+      | product     | quantity |
+      | Beetroot    | 10       |
+      | Walnuts     | 10       |
+      | Nuts        | 10       |
+      | Water Melon | 10       |
+    And Click on Add To Cart button for the products
+    Then Assert Number of items added in cart
+    When Click on cart to open
+    Then Assert Number of items added in cart preview
+    And Total cart price from json response
+    When Click on proceed to checkout button
+
   #Scenario: Verify today's top deals
 
 

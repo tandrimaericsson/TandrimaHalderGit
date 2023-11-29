@@ -12,6 +12,7 @@ public class CartPreview {
     private WebElement parent;
     private final By cartItem = By.className("cart-item");
     private final String cartItemLocator = ".//p[@class='product-name' and starts-with(text(),'%s')]/ancestor::li";
+    private final By proceedToCheckout=By.xpath(".//button[text()='PROCEED TO CHECKOUT']");
 
     public CartPreview(ManageWebDriver manageWebDriver, WebElement parent) {
         this.manageWebDriver = manageWebDriver;
@@ -31,5 +32,9 @@ public class CartPreview {
     public boolean isItemPresent(String productName) {
         return manageWebDriver.waitForElement(
                 By.xpath(String.format(cartItemLocator, productName)), parent)!=null;
+    }
+
+    public void clickOnProceedToCheckoutButton(){
+        manageWebDriver.click(proceedToCheckout,parent);
     }
 }

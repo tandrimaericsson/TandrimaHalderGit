@@ -1,0 +1,4 @@
+# Default ignored files
+target/
+test-output/
+.idea/

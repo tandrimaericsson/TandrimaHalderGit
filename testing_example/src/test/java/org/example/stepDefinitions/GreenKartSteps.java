@@ -4,7 +4,6 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import io.restassured.common.mapper.TypeRef;
 import org.example.pageClasses.greenkarts.GreenKartPage;
 import org.example.pageClasses.greenkarts.Product;
 import org.example.pojoClass.ProductDetails;
@@ -13,7 +12,10 @@ import org.example.utilities.TestContext;
 import org.junit.Assert;
 import org.testng.asserts.SoftAssert;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 public class GreenKartSteps {
@@ -29,9 +31,9 @@ public class GreenKartSteps {
     }
 
     @When("Enter {int} as quantity for {string} product")
-    public void enter_as_quantity_for_product(Integer quantity, String productName) {
+    public void enter_as_quantity_for_product(String quantity, String productName) {
         Product product = greenKart.getProduct(productName);
-        product.quantityInput().enterValue(String.valueOf(quantity));
+        product.quantityInput().enterValue(quantity);
     }
 
     @Then("Assert that quantity for {string} is changed to {int}")
@@ -167,15 +169,44 @@ public class GreenKartSteps {
     public void enterQuantityForTheFollowingProducts(DataTable dataTable) {
         List<Map<String, String>> dataList = dataTable.asMaps(String.class, String.class);
         dataList.forEach(entry -> {
-            enter_as_quantity_for_product(Integer.parseInt(entry.get("quantity")), entry.get("product"));
+            enter_as_quantity_for_product(entry.get("quantity"), entry.get("product"));
         });
-        testContext.getHashMap().put("productQtyList", dataList);
+        if (testContext.getHashMap().containsKey("productQtyList")) {
+            List<Map<String, String>> productQtyList = new ArrayList<>((List<Map<String, String>>) testContext.getHashMap().get(
+                    "productQtyList"));
+            dataList.forEach(entry -> {
+                List<Map<String, String>> productAndQty = productQtyList.stream()
+                        .filter(elem -> elem.get("product").equals(entry.get("products"))).toList();
+                if (!productAndQty.isEmpty()) {
+                    productQtyList.stream()
+                            .filter(elem -> elem.get("product").equals(entry.get("products"))).toList().get(0)
+                            .put("quantity", String.valueOf(Integer.parseInt(productAndQty.get(0).get("quantity"))
+                                    + Integer.parseInt(entry.get("quantity"))));
+                } else {
+                    Map<String, String> newEntry = new HashMap<>();
+                    newEntry.put("product", entry.get("product"));
+                    newEntry.put("quantity", entry.get("quantity"));
+                    productQtyList.add(newEntry);
+                }
+            });
+            testContext.getHashMap().put("productQtyList", productQtyList);
+            testContext.getHashMap().put("increasedProductQtyList", dataList);
+        } else {
+            testContext.getHashMap().put("productQtyList", dataList);
+        }
     }
 
     @And("Click on Add To Cart button for the following product")
     public void clickOnAddToCartButtonForTheFollowingProduct(DataTable dataTable) {
         List<Map<String, String>> dataList = dataTable.asMaps(String.class, String.class);
         dataList.forEach(entry -> click_on_add_to_cart_button_for(entry.get("product")));
+    }
+
+    @And("Click on Add To Cart button for the products with increased quantity")
+    public void clickOnAddToCartButtonForTheFollowingProductWithIncreasedQuantity() {
+        List<Map<String, String>> productQtyList = (List<Map<String, String>>) testContext.getHashMap().get(
+                "increasedProductQtyList");
+        productQtyList.forEach(entry -> click_on_add_to_cart_button_for(entry.get("product")));
     }
 
     @Then("Assert Number of items present in cart")
@@ -193,11 +224,17 @@ public class GreenKartSteps {
         List<ProductDetails> productDetailsList = testContext.getResponse().jsonPath().getList("", ProductDetails.class);
         List<Map<String, String>> productQtyList = (List<Map<String, String>>) testContext.getHashMap().get(
                 "productQtyList");
-        Integer expectedTotalPrice = 0;
+        long expectedTotalPrice = 0;
         for (Map<String, String> productAndQty : productQtyList) {
             ProductDetails productDetails = productDetailsList.stream()
                     .filter(product -> product.getName().startsWith(productAndQty.get("product"))).toList().get(0);
-            expectedTotalPrice += productDetails.getPrice() * Integer.parseInt(productAndQty.get("quantity"));
+
+            try {
+                expectedTotalPrice += productDetails.getPrice() * Integer.parseInt(productAndQty.get("quantity"));
+            }
+            catch(NumberFormatException numberFormatException){
+                expectedTotalPrice += productDetails.getPrice() * Long.parseLong(productAndQty.get("quantity"));
+            }
         }
         Assert.assertEquals(String.valueOf(expectedTotalPrice), greenKart.getTotalPriceInCart());
     }
@@ -227,8 +264,8 @@ public class GreenKartSteps {
         softAssert.assertAll();
     }
 
-    @And("Number of quantity for each product")
-    public void numberOfQuantityForEachProduct() {
+    @And("Assert Number of quantity for each product")
+    public void assertNumberOfQuantityForEachProduct() {
         List<Map<String, String>> productQtyList = (List<Map<String, String>>) testContext.getHashMap().get(
                 "productQtyList");
         List<Product> cartItems = greenKart.getCartPreview().getCartItems();
