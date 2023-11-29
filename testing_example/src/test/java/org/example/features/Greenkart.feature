@@ -128,6 +128,6 @@ Feature: test the GreenKart application
   #Scenario: Verify the ability to add item in big quantity
   #Scenario: Verify the ability to checkout
   #Scenario: Verify today's top deals
-  #
+
 
 
