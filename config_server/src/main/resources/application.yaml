@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/tandrimaericsson/spring_common_config
+          clone_on_start: true
+          default-label: master
+
+  server:
+    port: 8082
+
+
